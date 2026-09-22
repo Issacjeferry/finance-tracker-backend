@@ -2,6 +2,7 @@ package com.example.myproject.config;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -10,11 +11,14 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final String SECRET = "mysecretkeymysecretkeymysecretkey123";
-    private final long EXPIRATION = 1000 * 60 * 60; // 1 hour
+    @Value("${jwt.secret:financeTrackerSuperSecretKeyThatIsAtLeast256BitsLongForHMACSHA256!}")
+    private String secret;
+
+    // 24 hours expiration
+    private final long EXPIRATION = 1000L * 60 * 60 * 24;
 
     private Key getSignKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String generateToken(String email) {

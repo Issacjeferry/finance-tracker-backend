@@ -30,7 +30,7 @@ public class TransactionService {
                 .getPrincipal();
 
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Unauthorized: User not found"));
     }
 
     // ✅ Save transaction for logged-in user
@@ -83,22 +83,38 @@ public class TransactionService {
         return repository.save(existing);
     }
 
-    // ✅ Calculate summary per user
+    // ✅ Consolidated summary per user
+    public com.example.myproject.dto.SummaryResponse getSummary() {
+        List<Transaction> list = getAll();
+        double income = 0.0;
+        double expense = 0.0;
+        for (Transaction t : list) {
+            if (t.getAmount() != null) {
+                if ("INCOME".equalsIgnoreCase(t.getType())) {
+                    income += t.getAmount();
+                } else if ("EXPENSE".equalsIgnoreCase(t.getType())) {
+                    expense += t.getAmount();
+                }
+            }
+        }
+        return com.example.myproject.dto.SummaryResponse.builder()
+                .totalIncome(income)
+                .totalExpense(expense)
+                .balance(income - expense)
+                .transactionCount(list.size())
+                .build();
+    }
+
+    // ✅ Calculate summary per user (legacy endpoints)
     public Double getTotalIncome() {
-        return getAll().stream()
-                .filter(t -> "INCOME".equals(t.getType()))
-                .mapToDouble(Transaction::getAmount)
-                .sum();
+        return getSummary().getTotalIncome();
     }
 
     public Double getTotalExpense() {
-        return getAll().stream()
-                .filter(t -> "EXPENSE".equals(t.getType()))
-                .mapToDouble(Transaction::getAmount)
-                .sum();
+        return getSummary().getTotalExpense();
     }
 
     public Double getBalance() {
-        return getTotalIncome() - getTotalExpense();
+        return getSummary().getBalance();
     }
 }
